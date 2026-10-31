@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="app-layout">
+    <aside class="sidebar">
+        <a href="/" class="brand">
+            <span class="brand-icon">S</span>
+            <span>StudentHub</span>
+        </a>
+
+        <p class="menu-label">MAIN MENU</p>
+
+        <a href="/" class="menu-item active">
+            <span>▦</span> Dashboard
+        </a>
+
+        <a href="#students" class="menu-item">
+            <span>♙</span> Students
+        </a>
+
+        <div class="sidebar-footer">
+            <div class="profile-avatar">A</div>
+            <div>
+                <strong>Administrator</strong>
+                <small>Management Portal</small>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="topbar">
+            <div>
+                <p class="breadcrumb-text">Pages / Dashboard</p>
+                <h1>Student Dashboard</h1>
+            </div>
+            <div class="admin-badge">
+                <span class="status-dot"></span>
+                Admin Panel
+            </div>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="alerts-wrapper mb-3">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category if category != 'error' else 'danger' }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <section class="welcome-card">
+            <div>
+                <p class="welcome-label">STUDENT MANAGEMENT</p>
+                <h2>Welcome back, Administrator!</h2>
+                <p>Manage student information easily from one place.</p>
+            </div>
+            <div class="welcome-symbol">✦</div>
+        </section>
+
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon blue">♙</div>
+                <p>Total Students</p>
+                <h3>{{ total_students }}</h3>
+                <small>Registered students</small>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon green">✓</div>
+                <p>Active Records</p>
+                <h3>{{ total_students }}</h3>
+                <small>Available in the system</small>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon purple">@</div>
+                <p>Email Records</p>
+                <h3>{{ total_students }}</h3>
+                <small>Contact information</small>
+            </div>
+        </section>
+
+        <section class="content-card" id="students">
+            <div class="section-heading">
+                <div>
+                    <h2>Student Directory</h2>
+                    <p>View and manage registered students.</p>
+                </div>
+                <button type="button" id="add-student-btn" class="btn btn-primary add-button">+ Add Student</button>
+            </div>
+
+            <form id="student-form" class="student-form hidden" method="POST" action="{{ url_for('students.add_student') }}">
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                    <h5 id="form-heading" class="m-0 fw-bold text-dark">Add New Student</h5>
+                    <span id="form-badge" class="badge bg-primary">Create Mode</span>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label" for="student_name">Student Name</label>
+                        <input id="student_name" type="text" name="student_name" class="form-control" placeholder="Enter student's full name" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" for="email_address">Email Address</label>
+                        <input id="email_address" type="email" name="email_address" class="form-control" placeholder="name@example.com" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" for="phone_number">Phone Number</label>
+                        <input id="phone_number" type="tel" name="phone_number" class="form-control" placeholder="Enter phone number" required>
+                    </div>
+                </div>
+                <div class="form-actions-row mt-3 d-flex justify-content-end gap-2">
+                    <button type="button" id="cancel-edit" class="btn btn-light cancel-form-btn">Cancel</button>
+                    <button type="submit" id="student-submit" class="btn btn-primary px-4">Add Student</button>
+                </div>
+            </form>
+
+            <form method="GET" action="{{ url_for('students.home') }}" class="search-form">
+                <div class="search-row">
+                    <input type="text" name="search" class="search-input" value="{{ search_term }}" placeholder="Search by name, email, or phone...">
+                    <button type="submit" class="btn btn-primary search-btn">Search</button>
+                    <a href="{{ url_for('students.home') }}#students" class="btn btn-light reset-btn">Reset</a>
+                </div>
+            </form>
+
+            <div class="table-responsive">
+                <table class="table student-table align-middle">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>STUDENT NAME</th>
+                        <th>EMAIL ADDRESS</th>
+                        <th>PHONE NUMBER</th>
+                        <th>ACTIONS</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for student in students %}
+                        {% set student_id = student.get('id', student.get('student_id')) %}
+                        {% set student_name = student.get('student_name') or student.get('name') or 'N/A' %}
+                        {% set student_email = student.get('email_address') or student.get('email') or 'N/A' %}
+                        {% set student_phone = student.get('phone_number') or student.get('phone') or 'N/A' %}
+                        <tr>
+                            <td>#{{ student_id }}</td>
+                            <td><strong>{{ student_name }}</strong></td>
+                            <td>{{ student_email }}</td>
+                            <td>{{ student_phone }}</td>
+                            <td class="action-cell">
+                                <button type="button" class="btn btn-outline-primary btn-sm action-btn edit-btn"
+                                    data-student='{{ {"id": student_id, "student_name": student_name, "email_address": student_email, "phone_number": student_phone} | tojson }}'>Edit</button>
+                                <form method="POST" action="{{ url_for('students.delete_student', student_id=student_id) }}" class="inline-delete-form">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm action-btn" onclick="return confirm('Delete this student?');">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="empty-state">No students found.</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-footer">
+                Showing {{ total_students }} student record{% if total_students != 1 %}s{% endif %}
+            </div>
+        </section>
+
+        <footer class="page-footer">
+            StudentHub &copy; 2026. Student Management System.
+        </footer>
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const studentForm = document.getElementById('student-form');
+    const formHeading = document.getElementById('form-heading');
+    const formBadge = document.getElementById('form-badge');
+    const submitButton = document.getElementById('student-submit');
+    const addStudentBtn = document.getElementById('add-student-btn');
+    const cancelBtn = document.getElementById('cancel-edit');
+    const nameInput = document.getElementById('student_name');
+    const emailInput = document.getElementById('email_address');
+    const phoneInput = document.getElementById('phone_number');
+
+    function openAddMode() {
+        studentForm.action = '{{ url_for("students.add_student") }}';
+        formHeading.textContent = 'Add New Student';
+        formBadge.textContent = 'Create Mode';
+        formBadge.className = 'badge bg-primary';
+        submitButton.textContent = 'Add Student';
+        nameInput.value = '';
+        emailInput.value = '';
+        phoneInput.value = '';
+        studentForm.classList.remove('hidden');
+        studentForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        nameInput.focus();
+    }
+
+    if (addStudentBtn) {
+        addStudentBtn.addEventListener('click', function () {
+            if (studentForm.classList.contains('hidden')) {
+                openAddMode();
+            } else if (submitButton.textContent === 'Add Student') {
+                studentForm.classList.add('hidden');
+            } else {
+                openAddMode();
+            }
+        });
+    }
+
+    document.querySelectorAll('.edit-btn').forEach(function (button) {
+        button.addEventListener('click', function () {
+            const student = JSON.parse(button.dataset.student || '{}');
+            studentForm.action = '/students/update/' + student.id;
+            formHeading.textContent = 'Update Student Details';
+            formBadge.textContent = 'Edit Mode (#' + student.id + ')';
+            formBadge.className = 'badge bg-warning text-dark';
+            nameInput.value = (student.student_name && student.student_name !== 'N/A') ? student.student_name : '';
+            emailInput.value = (student.email_address && student.email_address !== 'N/A') ? student.email_address : '';
+            phoneInput.value = (student.phone_number && student.phone_number !== 'N/A') ? student.phone_number : '';
+            submitButton.textContent = 'Update Student';
+            studentForm.classList.remove('hidden');
+            studentForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            nameInput.focus();
+        });
+    });
+
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', function () {
+            studentForm.reset();
+            studentForm.classList.add('hidden');
+        });
+    }
+
+    // Auto-open add form if URL has ?add=1 or hash #add
+    if (window.location.search.includes('add=1') || window.location.hash === '#add') {
+        openAddMode();
+    }
+</script>
+</body>
+</html>
